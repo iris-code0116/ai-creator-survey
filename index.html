@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>AI 小小创造者 · 家庭调研</title>
+<meta name="description" content="关于孩子兴趣、探索与创造力的家庭调研。约 5 分钟，不收集姓名与照片。">
+<meta name="theme-color" content="#F6F3EC">
+<style>
+  :root{
+    --paper:#F6F3EC;
+    --paper-lift:#FFFCF5;
+    --ink:#23211D;
+    --ink-soft:#4A463E;
+    --muted:#8A8377;
+    --line:#E0D9CB;
+    --line-strong:#CFC6B4;
+    --accent:#A94E22;
+    --accent-soft:#F2E4D8;
+    --ok:#4E6B4F;
+    --serif:"Songti SC","Noto Serif SC","Source Han Serif SC","STSong",Georgia,serif;
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --radius:3px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    background-image:radial-gradient(circle at 12% 8%, rgba(169,78,34,.045), transparent 42%),
+                     radial-gradient(circle at 88% 96%, rgba(78,107,79,.05), transparent 46%);
+    background-attachment:fixed;
+  }
+
+  /* ── 顶部进度 ── */
+  .topbar{
+    position:sticky;top:0;z-index:30;
+    background:rgba(246,243,236,.92);
+    backdrop-filter:saturate(140%) blur(12px);
+    -webkit-backdrop-filter:saturate(140%) blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{
+    max-width:680px;margin:0 auto;
+    padding:14px 24px 0;
+  }
+  .brandline{
+    display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+    font-size:12px;letter-spacing:.12em;color:var(--muted);
+  }
+  .brandline b{font-weight:600;color:var(--ink-soft);letter-spacing:.06em}
+  .progress-track{display:flex;gap:6px;padding:12px 0 0}
+  .progress-seg{
+    flex:1;height:2px;background:var(--line-strong);border-radius:2px;
+    transition:background .5s ease;
+  }
+  .progress-seg.on{background:var(--accent)}
+
+  /* ── 布局 ── */
+  main{max-width:680px;margin:0 auto;padding:0 24px 140px}
+  section{display:none;padding-top:40px}
+  section.active{display:block;animation:rise .45s cubic-bezier(.22,.61,.36,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  .eyebrow{
+    font-size:11px;letter-spacing:.22em;color:var(--accent);
+    text-transform:uppercase;margin:0 0 18px;font-weight:600;
+  }
+  h1{
+    font-family:var(--serif);
+    font-size:clamp(27px,7.2vw,36px);
+    line-height:1.42;
+    font-weight:600;
+    letter-spacing:.01em;
+    margin:0 0 20px;
+  }
+  .lede{
+    font-family:var(--serif);
+    font-size:17px;line-height:1.95;color:var(--ink-soft);
+    margin:0 0 20px;
+  }
+  .lede em{font-style:normal;color:var(--ink);border-bottom:1px solid var(--line-strong);padding-bottom:1px}
+  .fineprint{
+    font-size:13px;line-height:1.85;color:var(--muted);
+    border-left:2px solid var(--line-strong);padding-left:14px;margin:24px 0 0;
+  }
+
+  .rule{height:1px;background:var(--line);margin:36px 0;border:0}
+
+  /* ── 同意 ── */
+  .consent{
+    background:var(--paper-lift);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px 20px 18px;
+    margin:30px 0 0;
+  }
+  .consent h3{
+    font-size:14px;font-weight:600;letter-spacing:.04em;
+    margin:0 0 10px;color:var(--ink);
+  }
+  .consent p{font-size:13.5px;line-height:1.9;color:var(--muted);margin:0 0 16px}
+  .check{
+    display:flex;gap:12px;align-items:flex-start;cursor:pointer;
+    font-size:14.5px;line-height:1.7;color:var(--ink-soft);
+    padding:14px;margin:0 -14px;
+    border-top:1px dashed var(--line-strong);
+    transition:background .2s;
+  }
+  .check:active{background:rgba(0,0,0,.02)}
+  .check input{position:absolute;opacity:0;width:0;height:0}
+  .box{
+    flex:0 0 auto;width:20px;height:20px;margin-top:2px;
+    border:1.5px solid var(--line-strong);border-radius:2px;background:#fff;
+    position:relative;transition:all .2s;
+  }
+  .box::after{
+    content:"";position:absolute;left:6px;top:2px;width:5px;height:10px;
+    border-right:2px solid #fff;border-bottom:2px solid #fff;
+    transform:rotate(42deg) scale(.4);opacity:0;transition:all .2s;
+  }
+  .check input:checked + .box{background:var(--accent);border-color:var(--accent)}
+  .check input:checked + .box::after{opacity:1;transform:rotate(42deg) scale(1)}
+  .check input:focus-visible + .box{box-shadow:0 0 0 3px rgba(169,78,34,.18)}
+
+  /* ── 基础字段 ── */
+  .field{padding:26px 0;border-bottom:1px solid var(--line)}
+  .field:last-of-type{border-bottom:0}
+  .field-label{
+    display:block;font-size:15px;font-weight:600;margin-bottom:4px;
+    letter-spacing:.01em;
+  }
+  .field-hint{font-size:12.5px;color:var(--muted);margin:0 0 14px;line-height:1.7}
+  .req{color:var(--accent);font-weight:400;margin-left:4px;font-size:13px}
+
+  input[type=number],select{
+    font-family:var(--sans);font-size:16px;color:var(--ink);
+    background:transparent;border:0;border-bottom:1.5px solid var(--line-strong);
+    padding:8px 2px;width:100%;max-width:180px;border-radius:0;
+    outline:none;transition:border-color .25s;
+    -webkit-appearance:none;appearance:none;
+  }
+  input[type=number]:focus,select:focus{border-bottom-color:var(--accent)}
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+  .chip{
+    font-family:var(--sans);font-size:14px;color:var(--ink-soft);
+    background:transparent;border:1px solid var(--line-strong);
+    padding:8px 15px;border-radius:100px;cursor:pointer;
+    transition:all .18s;line-height:1.2;
+  }
+  .chip:hover{border-color:var(--ink-soft);color:var(--ink)}
+  .chip[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+
+  /* ── 问题 ── */
+  .q{padding:38px 0 32px;border-bottom:1px solid var(--line)}
+  .q:last-child{border-bottom:0}
+  .q-head{display:flex;gap:14px;align-items:baseline;margin-bottom:16px}
+  .qcode{
+    flex:0 0 auto;font-size:11px;font-weight:700;letter-spacing:.1em;
+    color:var(--accent);font-variant-numeric:tabular-nums;
+    padding-top:6px;
+  }
+  .qtext{
+    font-family:var(--serif);font-size:18.5px;line-height:1.78;
+    font-weight:600;margin:0;letter-spacing:.005em;
+  }
+  textarea{
+    display:block;width:100%;
+    font-family:var(--sans);font-size:15.5px;line-height:1.85;color:var(--ink);
+    background:var(--paper-lift);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 15px;
+    resize:none;outline:none;
+    min-height:96px;
+    transition:border-color .25s, box-shadow .25s;
+  }
+  textarea::placeholder{color:#B3AB9C;font-size:15px}
+  textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(169,78,34,.07)}
+  .quick{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+  .quick button{
+    font-family:var(--sans);font-size:12.5px;color:var(--muted);
+    background:transparent;border:1px dashed var(--line-strong);
+    padding:5px 11px;border-radius:100px;cursor:pointer;transition:all .18s;
+  }
+  .quick button:hover{color:var(--accent);border-color:var(--accent);background:rgba(169,78,34,.04)}
+  .optional-tag{
+    display:inline-block;font-size:11px;color:var(--muted);
+    border:1px solid var(--line);padding:1px 7px;border-radius:100px;
+    margin-left:8px;vertical-align:2px;letter-spacing:.04em;font-weight:400;
+    font-family:var(--sans);
+  }
+
+  /* ── 课程介绍 ── */
+  .course{
+    background:var(--paper-lift);
+    border:1px solid var(--line);
+    border-top:3px solid var(--ink);
+    border-radius:var(--radius);
+    padding:34px 26px 30px;
+    margin:0 0 34px;
+  }
+  .course-kicker{
+    font-size:11px;letter-spacing:.22em;color:var(--muted);
+    font-weight:600;margin:0 0 16px;
+  }
+  .course h2{
+    font-family:var(--serif);font-size:clamp(24px,6vw,29px);font-weight:600;
+    letter-spacing:.06em;margin:0 0 18px;line-height:1.45;
+  }
+  .course h3{
+    font-family:var(--serif);font-size:clamp(18px,4.6vw,21px);font-weight:600;
+    line-height:1.72;letter-spacing:.01em;margin:0 0 22px;color:var(--ink);
+  }
+  .course p{font-size:15px;line-height:2;color:var(--ink-soft);margin:0 0 18px}
+  .course ul{margin:0 0 22px;padding:0;list-style:none}
+  .course li{
+    position:relative;padding-left:22px;margin-bottom:12px;
+    font-size:15px;line-height:1.9;color:var(--ink-soft);
+  }
+  .course li::before{
+    content:"";position:absolute;left:2px;top:11px;
+    width:9px;height:1.5px;background:var(--accent);
+  }
+  .course .closing{
+    font-family:var(--serif);font-size:16px;line-height:1.9;font-weight:600;
+    color:var(--ink);margin:0 0 18px;
+  }
+  .course-foot{
+    font-size:12px;letter-spacing:.14em;color:var(--muted);
+    margin:22px 0 0;padding-top:18px;border-top:1px solid var(--line);
+  }
+  .course-note{
+    font-size:12.5px;line-height:1.8;color:var(--muted);
+    margin:0 0 22px;
+  }
+
+  /* ── 底部操作 ── */
+  .actionbar{
+    position:fixed;left:0;right:0;bottom:0;z-index:40;
+    background:linear-gradient(to top, var(--paper) 58%, rgba(246,243,236,.93) 82%, rgba(246,243,236,0));
+    padding:18px 24px calc(20px + env(safe-area-inset-bottom));
+    pointer-events:none;
+  }
+  .actioninner{
+    max-width:680px;margin:0 auto;
+    display:flex;align-items:center;gap:14px;pointer-events:auto;
+  }
+  .btn{
+    font-family:var(--sans);font-size:15.5px;font-weight:600;letter-spacing:.04em;
+    border:0;border-radius:var(--radius);cursor:pointer;
+    padding:15px 30px;transition:all .2s;
+  }
+  .btn-primary{background:var(--ink);color:var(--paper);flex:1}
+  .btn-primary:hover{background:#000}
+  .btn-primary:active{transform:scale(.985)}
+  .btn-ghost{
+    background:transparent;color:var(--muted);padding:15px 8px;font-weight:400;
+    font-size:14px;
+  }
+  .btn-ghost:hover{color:var(--ink)}
+  .counter{
+    font-size:12px;color:var(--muted);letter-spacing:.08em;
+    font-variant-numeric:tabular-nums;flex:0 0 auto;padding-right:4px;
+  }
+
+  .err{
+    display:none;font-size:13px;color:var(--accent);margin-top:10px;
+    padding-left:2px;
+  }
+  .err.show{display:block;animation:rise .3s both}
+  .shake{animation:shake .4s}
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}
+    22%{transform:translateX(-6px)}
+    55%{transform:translateX(5px)}
+    80%{transform:translateX(-3px)}
+  }
+
+  /* ── 完成页 ── */
+  .done-wrap{padding-top:56px;text-align:left}
+  .seal{
+    display:inline-block;font-size:11px;letter-spacing:.2em;font-weight:700;
+    color:var(--ok);border:1.5px solid var(--ok);padding:5px 12px;
+    border-radius:2px;margin-bottom:26px;
+  }
+  .famid{
+    font-family:var(--sans);font-size:13px;letter-spacing:.16em;
+    color:var(--muted);margin:0 0 30px;
+  }
+  .famid b{color:var(--ink);font-weight:600;letter-spacing:.1em}
+  .done-note{
+    font-size:14.5px;line-height:1.95;color:var(--ink-soft);
+    margin:0 0 24px;
+  }
+  .transcript{
+    background:var(--paper-lift);border:1px solid var(--line);
+    border-radius:var(--radius);padding:20px;
+    font-size:13px;line-height:1.85;color:var(--ink-soft);
+    white-space:pre-wrap;word-break:break-word;
+    max-height:340px;overflow:auto;
+    font-family:var(--sans);
+    margin-bottom:22px;
+  }
+  .done-actions{display:flex;flex-direction:column;gap:12px}
+  .btn-block{
+    width:100%;background:var(--accent);color:#fff;border:0;
+    font-family:var(--sans);font-size:15.5px;font-weight:600;letter-spacing:.04em;
+    padding:16px;border-radius:var(--radius);cursor:pointer;transition:all .2s;
+  }
+  .btn-block:hover{background:#8F3F19}
+  .btn-block:active{transform:scale(.99)}
+  .btn-outline{
+    width:100%;background:transparent;color:var(--ink-soft);
+    border:1px solid var(--line-strong);font-family:var(--sans);font-size:14.5px;
+    padding:14px;border-radius:var(--radius);cursor:pointer;transition:all .2s;
+  }
+  .btn-outline:hover{border-color:var(--ink-soft);color:var(--ink)}
+
+  .toast{
+    position:fixed;left:50%;bottom:110px;transform:translate(-50%,16px);
+    background:var(--ink);color:var(--paper);
+    font-size:13.5px;letter-spacing:.03em;
+    padding:11px 20px;border-radius:100px;
+    opacity:0;pointer-events:none;transition:all .28s;
+    z-index:80;white-space:nowrap;max-width:90vw;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:420px){
+    .qtext{font-size:17.5px}
+    .course{padding:28px 20px 26px}
+    main{padding-left:20px;padding-right:20px}
+    .topbar-inner{padding-left:20px;padding-right:20px}
+    .actionbar{padding-left:20px;padding-right:20px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brandline">
+      <b>AI 小小创造者</b>
+      <span id="stepLabel">第一部分 / 共三部分</span>
+    </div>
+    <div class="progress-track" aria-hidden="true">
+      <div class="progress-seg on"></div>
+      <div class="progress-seg"></div>
+      <div class="progress-seg"></div>
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <!-- ═══ 第一部分 ═══ -->
+  <section id="s1" class="active">
+    <p class="eyebrow">家庭调研</p>
+    <h1>孩子的兴趣、<br>探索与创造力</h1>
+
+    <p class="lede">
+      我们希望了解孩子真实的兴趣、探索经历，以及家庭对 AI 的看法。没有标准答案，欢迎分享<em>具体的经历</em>；没有相关经历也可以直接说明。
+    </p>
+    <p class="fineprint">
+      参与完全自愿。孩子可以拒绝回答任何问题。本问卷不收集孩子姓名、学校、照片等身份信息。
+    </p>
+
+    <div class="consent">
+      <h3>知情同意</h3>
+      <p>参与前，请确认你已了解本调研的目的与信息使用方式。你可以在任何时候停止填写。</p>
+      <label class="check">
+        <input type="checkbox" id="consent">
+        <span class="box"></span>
+        <span>我是孩子的监护人，已阅读以上说明，同意参与本次调研。</span>
+      </label>
+      <div class="err" id="err-consent">需要勾选同意后才能继续。</div>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="age">孩子年龄<span class="req">必填</span></label>
+      <p class="field-hint">填写周岁整数；如果一时想不起，可以直接选一个年龄段。</p>
+      <input type="number" id="age" inputmode="numeric" min="3" max="18" placeholder="例如 9">
+      <div class="chips" style="margin-top:16px" data-group="ageRange">
+        <button type="button" class="chip" data-val="5-7 岁">5–7 岁</button>
+        <button type="button" class="chip" data-val="8-9 岁">8–9 岁</button>
+        <button type="button" class="chip" data-val="10-12 岁">10–12 岁</button>
+        <button type="button" class="chip" data-val="13-15 岁">13–15 岁</button>
+      </div>
+      <div class="err" id="err-age">请填写孩子年龄，或选择一个年龄段。</div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">与孩子的关系<span class="optional-tag">选填</span></span>
+      <div class="chips" style="margin-top:12px" data-group="relation">
+        <button type="button" class="chip" data-val="父亲">父亲</button>
+        <button type="button" class="chip" data-val="母亲">母亲</button>
+        <button type="button" class="chip" data-val="其他监护人">其他监护人</button>
+      </div>
+    </div>
+
+    <hr class="rule">
+
+    <div class="q">
+      <div class="q-head">
+        <span class="qcode">P01</span>
+        <p class="qtext">孩子最近有没有一件特别感兴趣、主动想研究或做出来的事情？可以分享一个具体经历吗？</p>
+      </div>
+      <textarea data-key="p01" placeholder="尽量具体一些：是什么事、怎么开始的、孩子做了什么。"></textarea>
+      <div class="quick">
+        <button type="button" data-fill="没有相关经历">没有相关经历</button>
+        <button type="button" data-fill="不确定">不确定</button>
+      </div>
+      <div class="err">这一题希望你能留下一点记录。</div>
+    </div>
+
+    <div class="q">
+      <div class="q-head">
+        <span class="qcode">P02</span>
+        <p class="qtext">孩子有没有做过一件让自己特别有成就感，或者让别人觉得有用、有趣、开心的事情？</p>
+      </div>
+      <textarea data-key="p02" placeholder="可以是做的东西、帮的忙、想出的办法，事情大小不限。"></textarea>
+      <div class="quick">
+        <button type="button" data-fill="没有相关经历">没有相关经历</button>
+        <button type="button" data-fill="不确定">不确定</button>
+      </div>
+      <div class="err">这一题希望你能留下一点记录。</div>
+    </div>
+
+    <div class="q">
+      <div class="q-head">
+        <span class="qcode">P03</span>
+        <p class="qtext">孩子接触过 AI 吗？你对孩子使用 AI 有什么期待或顾虑？</p>
+      </div>
+      <textarea data-key="p03" placeholder="比如用过什么、用来做什么；或者你更希望他远离、更希望他会用、担心什么。"></textarea>
+      <div class="quick">
+        <button type="button" data-fill="没有相关经历">没有相关经历</button>
+        <button type="button" data-fill="不确定">不确定</button>
+      </div>
+      <div class="err">这一题希望你能留下一点记录。</div>
+    </div>
+
+    <div class="q">
+      <div class="q-head">
+        <span class="qcode">P04</span>
+        <p class="qtext">过去一年，孩子参加过哪些让你觉得特别值得的课程或活动？为什么？</p>
+      </div>
+      <textarea data-key="p04" placeholder="“值得”由你判断，可以说说具体哪里打动你。"></textarea>
+      <div class="quick">
+        <button type="button" data-fill="没有相关经历">没有相关经历</button>
+        <button type="button" data-fill="不确定">不确定</button>
+      </div>
+      <div class="err">这一题希望你能留下一点记录。</div>
+    </div>
+  </section>
+
+  <!-- ═══ 第二部分 ═══ -->
+  <section id="s2">
+    <p class="eyebrow">课程介绍</p>
+    <p class="course-note">在回答下一题之前，请先花一分钟读完下面的介绍。</p>
+
+    <div class="course">
+      <p class="course-kicker">2 小时 · 公益体验课</p>
+      <h2>AI 小小创造者</h2>
+
+      <h3>当 AI 让创造变得更容易，孩子更需要学会发现什么值得创造。</h3>
+
+      <p>未来，孩子需要的不仅是使用 AI 的能力，更是主动探索世界、发现问题、独立思考和创造价值的能力。</p>
+
+      <p>每个孩子都有自己的兴趣、好奇心，以及成年人未必能够看到的独特视角。</p>
+
+      <p>我们希望通过真实的项目实践，让孩子：</p>
+
+      <ul>
+        <li>从自己的兴趣出发，发现真实世界中的需求与机会；</li>
+        <li>拥有自己的想法，而不是等待别人给出答案；</li>
+        <li>借助 AI 和伙伴的力量，把想法变成现实；</li>
+        <li>通过真实的用户反馈，认识自己的创造能够带来怎样的价值。</li>
+      </ul>
+
+      <p>这不是一堂单纯的 AI 工具课，也不是一场提前学习成人商业规则的创业训练。</p>
+
+      <p>而是一次属于孩子自己的探索与创造之旅。</p>
+
+      <p class="closing">呵护好奇心，培养创造力，让孩子拥有主动创造价值的能力。</p>
+
+      <p class="course-foot">AI 小小创造者 · 2 小时公益体验课</p>
+    </div>
+
+    <div class="q" style="padding-top:0">
+      <div class="q-head">
+        <span class="qcode">P05</span>
+        <p class="qtext">了解「AI 小小创造者」后，你认为这类课程对孩子最有价值的地方是什么？如果有后续成长营，你需要看到什么才会考虑报名？</p>
+      </div>
+      <textarea data-key="p05" placeholder="真实想法就好——包括不太认同的地方，或者暂时没有报名意愿，也欢迎直接写下来。"></textarea>
+      <div class="err">这一题希望你能留下一点记录。</div>
+    </div>
+  </section>
+
+  <!-- ═══ 第三部分 ═══ -->
+  <section id="s3">
+    <p class="eyebrow">孩子轻交流</p>
+    <h1 style="font-size:clamp(23px,6vw,28px)">接下来，想听听<br>孩子自己的回答</h1>
+    <p class="lede" style="font-size:15.5px">
+      请邀请孩子自己表达，家长可以代为记录原话，但<em>不要替孩子作答</em>。孩子不愿意参与，可以直接进入下一页完成提交。
+    </p>
+    <p class="fineprint">以下三题均为选填。如果孩子不想聊，跳过完全没有问题。</p>
+
+    <div class="q" style="margin-top:32px">
+      <div class="q-head">
+        <span class="qcode">C01</span>
+        <p class="qtext">你最近最喜欢做、玩或者研究什么？能给我讲讲吗？<span class="optional-tag">选填</span></p>
+      </div>
+      <textarea data-key="c01" placeholder="记录孩子的原话，保留他自己用词的方式。"></textarea>
+    </div>
+
+    <div class="q">
+      <div class="q-head">
+        <span class="qcode">C02</span>
+        <p class="qtext">有没有什么东西你特别想做出来，但现在还做不到？<span class="optional-tag">选填</span></p>
+      </div>
+      <textarea data-key="c02" placeholder="记录孩子的原话。"></textarea>
+    </div>
+
+    <div class="q">
+      <div class="q-head">
+        <span class="qcode">C03</span>
+        <p class="qtext">如果真的做出来了，你最希望谁看到、玩到或者用到它？为什么？<span class="optional-tag">选填</span></p>
+      </div>
+      <textarea data-key="c03" placeholder="记录孩子的原话。"></textarea>
+    </div>
+  </section>
+
+  <!-- ═══ 完成 ═══ -->
+  <section id="s4">
+    <div class="done-wrap">
+      <span class="seal">已提交</span>
+      <h1 style="font-size:clamp(24px,6.4vw,30px);margin-bottom:14px">谢谢你的时间。</h1>
+      <p class="famid">家庭编号 <b id="famidOut">—</b></p>
+
+      <p class="done-note">
+        你的回答已经整理成一份记录。<strong>请点击下面的按钮复制它，并发送给邀请你参与调研的研究员。</strong>
+        如果方便，也可以直接把这一页截图发过去。
+      </p>
+
+      <div class="transcript" id="transcript">—</div>
+
+      <div class="done-actions">
+        <button class="btn-block" id="copyBtn">复制我的回答</button>
+        <button class="btn-outline" id="dlBtn">下载为文本文件</button>
+      </div>
+
+      <p class="fineprint" style="margin-top:36px">
+        这份记录只保存在你自己的设备上，我们不设后台、不做公开。如果你改变了主意，随时可以关闭页面，不必发送。
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<div class="actionbar" id="actionbar">
+  <div class="actioninner">
+    <button class="btn btn-ghost" id="backBtn" style="display:none">上一步</button>
+    <span class="counter" id="counter"></span>
+    <button class="btn btn-primary" id="nextBtn">下一步</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">已复制</div>
+
+<script>
+/* ============================================================
+   可选：填写表单收集地址，即可自动把答卷发到你的服务器/Webhook
+   例如 n8n、飞书多维表格 Webhook、自建接口。
+   留空时，问卷仍然可用，受访者通过“复制回答”回传。
+   ============================================================ */
+const CONFIG = {
+  endpoint: "",            // ← 例：https://your-webhook.example.com/survey
+  surveyId: "ai-creator-family-v3"
+};
+
+/* ── 状态 ── */
+const STORE_KEY = "aics_survey_v3_draft";
+const state = {
+  consent:false, age:"", ageRange:"", relation:"",
+  p01:"",p02:"",p03:"",p04:"",p05:"",c01:"",c02:"",c03:""
+};
+const steps = ["s1","s2","s3","s4"];
+let current = 0;
+const labels = ["第一部分 / 共三部分","第二部分 / 共三部分","第三部分 / 共三部分","已提交"];
+
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+
+/* ── 草稿保存 ── */
+function saveDraft(){
+  if(current >= 3) return;   // 已提交后不再保存草稿
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify({state,current:Math.min(current,2)})); }catch(e){}
+}
+function loadDraft(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return;
+    const d = JSON.parse(raw);
+    if(d && d.state){
+      Object.assign(state, d.state);
+      if(typeof d.current === "number" && d.current > 0 && d.current < 3) current = d.current;
+    }
+  }catch(e){}
+}
+
+/* ── 渲染回填 ── */
+function hydrate(){
+  $("#consent").checked = !!state.consent;
+  if(state.age) $("#age").value = state.age;
+  $$(".chip").forEach(c => {
+    const g = c.parentElement.dataset.group;
+    if(!g) return;
+    if(state[g] === c.dataset.val) c.setAttribute("aria-pressed","true");
+  });
+  $$("textarea").forEach(t => {
+    const k = t.dataset.key;
+    if(state[k]){ t.value = state[k]; autoGrow(t); }
+  });
+}
+
+/* ── 自动增高 ── */
+function autoGrow(el){
+  el.style.height = "auto";
+  el.style.height = Math.max(96, el.scrollHeight + 2) + "px";
+}
+
+/* ── 步骤切换 ── */
+function goTo(i, scroll){
+  current = Math.max(0, Math.min(steps.length - 1, i));
+  steps.forEach((id, idx) => {
+    document.getElementById(id).classList.toggle("active", idx === current);
+  });
+  $("#stepLabel").textContent = labels[current];
+  $$(".progress-seg").forEach((seg, idx) => seg.classList.toggle("on", idx <= Math.min(current,2)));
+
+  $("#backBtn").style.display = current === 0 || current === 3 ? "none" : "block";
+  $("#nextBtn").textContent = current === 2 ? "提交问卷" : "下一步";
+  if(current === 3){
+    $("#actionbar").style.display = "none";
+  }else{
+    $("#actionbar").style.display = "block";
+    $("#counter").textContent = current === 2 ? "孩子部分全部选填" : "";
+  }
+  if(scroll !== false) window.scrollTo({top:0, behavior:"smooth"});
+  saveDraft();
+}
+
+/* ── 校验 ── */
+function showErr(id, scroll){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.add("show");
+  if(scroll === false) return;
+  const host = el.closest(".field, .consent, .q");
+  if(host){
+    host.classList.add("shake");
+    setTimeout(()=>host.classList.remove("shake"), 450);
+    host.scrollIntoView({behavior:"smooth", block:"center"});
+  }
+}
+function hideErr(id){
+  const el = document.getElementById(id);
+  if(el) el.classList.remove("show");
+}
+
+function validateStep(){
+  if(current === 0){
+    let ok = true;
+    if(!state.consent){ showErr("err-consent"); ok = false; }
+    if(!state.age && !state.ageRange){
+      showErr("err-age", ok ? true : false);
+      ok = false;
+    }
+    const map = [["p01","err-p01"],[ "p02","err-p02"],["p03","err-p03"],["p04","err-p04"]];
+    // 家长题必填
+    const qs = $$("#s1 .q");
+    qs.forEach(q => {
+      const ta = q.querySelector("textarea");
+      if(!ta.value.trim()){
+        q.querySelector(".err").classList.add("show");
+        if(ok){
+          q.classList.add("shake");
+          setTimeout(()=>q.classList.remove("shake"),450);
+          q.scrollIntoView({behavior:"smooth",block:"center"});
+        }
+        ok = false;
+      }
+    });
+    return ok;
+  }
+  if(current === 1){
+    const ta = document.querySelector('#s2 textarea[data-key="p05"]');
+    if(!ta.value.trim()){
+      const q = ta.closest(".q");
+      q.querySelector(".err").classList.add("show");
+      q.classList.add("shake");
+      setTimeout(()=>q.classList.remove("shake"),450);
+      q.scrollIntoView({behavior:"smooth",block:"center"});
+      return false;
+    }
+  }
+  return true;
+}
+
+/* ── 家庭编号 ── */
+function makeId(){
+  const d = new Date();
+  const y = String(d.getFullYear()).slice(2);
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const chars = "ACDEFGHJKLMNPQRTUVWXY3479";
+  let code = "";
+  for(let i=0;i<4;i++) code += chars[Math.floor(Math.random()*chars.length)];
+  return `AIC-${y}${m}-${code}`;
+}
+
+/* ── 生成文本记录 ── */
+function buildTranscript(id){
+  const L = [];
+  const ageText = state.age ? `${state.age} 岁` : (state.ageRange || "未填");
+  L.push("【AI 小小创造者 · 家庭调研】");
+  L.push(`家庭编号：${id}`);
+  L.push(`提交时间：${new Date().toLocaleString("zh-CN",{hour12:false})}`);
+  L.push("");
+  L.push("── 基本信息 ──");
+  L.push(`孩子年龄：${ageText}`);
+  L.push(`与孩子关系：${state.relation || "未填"}`);
+  L.push("");
+  L.push("── 第一部分：兴趣、探索与创造力 ──");
+  L.push(`P01｜最近主动想研究或做出来的事：\n${state.p01.trim()}`);
+  L.push("");
+  L.push(`P02｜有成就感或让别人受益的事：\n${state.p02.trim()}`);
+  L.push("");
+  L.push(`P03｜AI 接触情况与期待、顾虑：\n${state.p03.trim()}`);
+  L.push("");
+  L.push(`P04｜过去一年值得的课程或活动：\n${state.p04.trim()}`);
+  L.push("");
+  L.push("── 第二部分：课程反馈 ──");
+  L.push(`P05｜课程价值判断与报名条件：\n${state.p05.trim()}`);
+  L.push("");
+  L.push("── 第三部分：孩子轻交流 ──");
+  L.push(`C01｜最近喜欢做、玩或研究的：\n${state.c01.trim() || "（未填）"}`);
+  L.push("");
+  L.push(`C02｜特别想做但现在做不到的：\n${state.c02.trim() || "（未填）"}`);
+  L.push("");
+  L.push(`C03｜最希望谁看到、用到，以及原因：\n${state.c03.trim() || "（未填）"}`);
+  return L.join("\n");
+}
+
+/* ── 提交 ── */
+async function submit(){
+  const id = makeId();
+  const text = buildTranscript(id);
+  const payload = {
+    survey: CONFIG.surveyId,
+    id,
+    submittedAt: new Date().toISOString(),
+    age: state.age || null,
+    ageRange: state.ageRange || null,
+    relation: state.relation || null,
+    p01: state.p01.trim(), p02: state.p02.trim(), p03: state.p03.trim(),
+    p04: state.p04.trim(), p05: state.p05.trim(),
+    c01: state.c01.trim(), c02: state.c02.trim(), c03: state.c03.trim()
+  };
+
+  if(CONFIG.endpoint){
+    try{
+      await fetch(CONFIG.endpoint, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+    }catch(e){ /* 静默失败，仍保留复制回传路径 */ }
+  }
+
+  const all = JSON.parse(localStorage.getItem("aics_submitted") || "[]");
+  all.push(payload);
+  try{ localStorage.setItem("aics_submitted", JSON.stringify(all)); }catch(e){}
+
+  $("#famidOut").textContent = id;
+  $("#transcript").textContent = text;
+  $("#transcript").dataset.raw = text;
+  try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+  goTo(3);
+}
+
+/* ── 事件绑定 ── */
+document.addEventListener("DOMContentLoaded", () => {
+  loadDraft();
+  hydrate();
+  goTo(current, false);
+
+  // 同意
+  $("#consent").addEventListener("change", e => {
+    state.consent = e.target.checked;
+    if(state.consent) hideErr("err-consent");
+    saveDraft();
+  });
+
+  // 年龄
+  $("#age").addEventListener("input", e => {
+    state.age = e.target.value.replace(/\D/g,"");
+    if(state.age) { state.ageRange = ""; 
+      $$('[data-group="ageRange"] .chip').forEach(c=>c.setAttribute("aria-pressed","false"));
+      hideErr("err-age");
+    }
+    saveDraft();
+  });
+
+  // 选项组
+  $$('[data-group]').forEach(group => {
+    const key = group.dataset.group;
+    group.querySelectorAll(".chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const val = chip.dataset.val;
+        const isOn = chip.getAttribute("aria-pressed") === "true";
+        group.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed","false"));
+        if(isOn){
+          state[key] = "";
+        }else{
+          chip.setAttribute("aria-pressed","true");
+          state[key] = val;
+          if(key === "ageRange"){ state.age = ""; $("#age").value = ""; hideErr("err-age"); }
+        }
+        saveDraft();
+      });
+    });
+  });
+
+  // 文本域
+  $$("textarea").forEach(ta => {
+    const key = ta.dataset.key;
+    autoGrow(ta);
+    ta.addEventListener("input", () => {
+      state[key] = ta.value;
+      autoGrow(ta);
+      if(ta.value.trim()){
+        const q = ta.closest(".q");
+        if(q) q.querySelector(".err").classList.remove("show");
+      }
+      saveDraft();
+    });
+  });
+
+  // 快捷填入
+  $$(".quick button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const ta = btn.closest(".q").querySelector("textarea");
+      ta.value = btn.dataset.fill;
+      ta.dispatchEvent(new Event("input"));
+      ta.focus();
+    });
+  });
+
+  // 导航
+  $("#nextBtn").addEventListener("click", () => {
+    if(!validateStep()) return;
+    if(current === 2){ submit(); return; }
+    goTo(current + 1);
+  });
+  $("#backBtn").addEventListener("click", () => goTo(current - 1));
+
+  // 复制
+  $("#copyBtn").addEventListener("click", async () => {
+    const text = $("#transcript").dataset.raw || "";
+    try{
+      await navigator.clipboard.writeText(text);
+      toast("已复制，请粘贴到微信发给研究员");
+    }catch(e){
+      const r = document.createRange();
+      r.selectNodeContents($("#transcript"));
+      const sel = window.getSelection();
+      sel.removeAllRanges(); sel.addRange(r);
+      toast("已选中文字，长按复制即可");
+    }
+  });
+
+  // 下载
+  $("#dlBtn").addEventListener("click", () => {
+    const text = $("#transcript").dataset.raw || "";
+    const blob = new Blob([text], {type:"text/plain;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `AI小小创造者调研_${$("#famidOut").textContent}.txt`;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+  });
+});
+
+let toastTimer;
+function toast(msg){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), 2600);
+}
+</script>
+</body>
+</html>
