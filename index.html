@@ -788,7 +788,7 @@ async function submit(){
 
   let delivered = false;
   if(CONFIG.endpoint){
-    delivered = await deliver(payload);
+    delivered = await deliver(payload, text);
   }
 
   const all = JSON.parse(localStorage.getItem("aics_submitted") || "[]");
@@ -804,29 +804,33 @@ async function submit(){
   goTo(3);
 }
 
-/* ── 上报：先正常 JSON POST，被跨域拦截就退回简单请求 ── */
-async function deliver(payload){
-  const body = JSON.stringify(payload);
+/* ── 上报 ──
+   飞书群机器人：包一层 text 消息（该端点支持跨域，可直接读响应）
+   其它（Formspree / n8n / 自建）：直接发 JSON
+*/
+const isFeishuBot = () => /open-apis\/bot\/v2\/hook/.test(CONFIG.endpoint);
+
+async function deliver(payload, text){
+  const body = isFeishuBot()
+    ? JSON.stringify({ msg_type:"text", content:{ text } })
+    : JSON.stringify(payload);
+
   try{
     const res = await fetch(CONFIG.endpoint, {
       method:"POST",
-      headers:{"Content-Type":"application/json","Accept":"application/json"},
+      headers:{"Content-Type":"application/json; charset=utf-8","Accept":"application/json"},
       body
     });
-    return res.ok || res.type === "opaque";
-  }catch(e){
+    if(!res.ok) return false;
+    // 飞书出错时也会返回 200，要看 code
     try{
-      // no-cors + text/plain：跳过预检，飞书 webhook 这类端点多半能收到
-      await fetch(CONFIG.endpoint, {
-        method:"POST",
-        mode:"no-cors",
-        headers:{"Content-Type":"text/plain;charset=UTF-8"},
-        body
-      });
-      return true;
-    }catch(e2){
-      return false;
-    }
+      const j = await res.json();
+      if(typeof j.code === "number" && j.code !== 0) return false;
+    }catch(e){}
+    return true;
+  }catch(e){
+    // 跨域被拦或网络中断都走这里：宁可报失败走复制回传，也不假装成功
+    return false;
   }
 }
 
