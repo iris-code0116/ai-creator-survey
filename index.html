@@ -788,16 +788,7 @@ async function submit(){
 
   let delivered = false;
   if(CONFIG.endpoint){
-    try{
-      const res = await fetch(CONFIG.endpoint, {
-        method:"POST",
-        headers:{"Content-Type":"application/json","Accept":"application/json"},
-        body: JSON.stringify(payload)
-      });
-      delivered = res.ok;
-    }catch(e){
-      delivered = false;
-    }
+    delivered = await deliver(payload);
   }
 
   const all = JSON.parse(localStorage.getItem("aics_submitted") || "[]");
@@ -811,6 +802,32 @@ async function submit(){
 
   renderDone(delivered);
   goTo(3);
+}
+
+/* ── 上报：先正常 JSON POST，被跨域拦截就退回简单请求 ── */
+async function deliver(payload){
+  const body = JSON.stringify(payload);
+  try{
+    const res = await fetch(CONFIG.endpoint, {
+      method:"POST",
+      headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body
+    });
+    return res.ok || res.type === "opaque";
+  }catch(e){
+    try{
+      // no-cors + text/plain：跳过预检，飞书 webhook 这类端点多半能收到
+      await fetch(CONFIG.endpoint, {
+        method:"POST",
+        mode:"no-cors",
+        headers:{"Content-Type":"text/plain;charset=UTF-8"},
+        body
+      });
+      return true;
+    }catch(e2){
+      return false;
+    }
+  }
 }
 
 /* ── 完成页三种状态 ── */
