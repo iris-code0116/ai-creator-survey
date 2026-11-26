@@ -293,6 +293,7 @@
     color:var(--ok);border:1.5px solid var(--ok);padding:5px 12px;
     border-radius:2px;margin-bottom:26px;
   }
+  .seal.fail{color:var(--accent);border-color:var(--accent)}
   .famid{
     font-family:var(--sans);font-size:13px;letter-spacing:.16em;
     color:var(--muted);margin:0 0 30px;
@@ -380,7 +381,7 @@
 
     <div class="consent">
       <h3>知情同意</h3>
-      <p>参与前，请确认你已了解本调研的目的与信息使用方式。你可以在任何时候停止填写。</p>
+      <p>本调研由这门课程的教研团队发起，只用于课程设计。回答不会公开、不用于营销、不转给第三方，原始记录在教研结束后删除。想撤回或删除已提交的回答，直接联系邀请你填写的人即可。</p>
       <label class="check">
         <input type="checkbox" id="consent">
         <span class="box"></span>
@@ -391,7 +392,7 @@
 
     <div class="field">
       <label class="field-label" for="age">孩子年龄<span class="req">必填</span></label>
-      <p class="field-hint">填写周岁整数；如果一时想不起，可以直接选一个年龄段。</p>
+      <p class="field-hint">填写周岁整数。只想说个大概，也可以直接选年龄段。</p>
       <input type="number" id="age" inputmode="numeric" min="3" max="18" placeholder="例如 9">
       <div class="chips" style="margin-top:16px" data-group="ageRange">
         <button type="button" class="chip" data-val="5-7 岁">5–7 岁</button>
@@ -546,25 +547,25 @@
   <!-- ═══ 完成 ═══ -->
   <section id="s4">
     <div class="done-wrap">
-      <span class="seal">已提交</span>
+      <span class="seal" id="seal">已提交</span>
       <h1 style="font-size:clamp(24px,6.4vw,30px);margin-bottom:14px">谢谢你的时间。</h1>
       <p class="famid">家庭编号 <b id="famidOut">—</b></p>
 
-      <p class="done-note">
-        你的回答已经整理成一份记录。<strong>请点击下面的按钮复制它，并发送给邀请你参与调研的研究员。</strong>
-        如果方便，也可以直接把这一页截图发过去。
-      </p>
+      <p class="done-note" id="doneNote"></p>
 
-      <div class="transcript" id="transcript">—</div>
-
-      <div class="done-actions">
-        <button class="btn-block" id="copyBtn">复制我的回答</button>
-        <button class="btn-outline" id="dlBtn">下载为文本文件</button>
+      <div id="copyBlock">
+        <div class="transcript" id="transcript">—</div>
+        <div class="done-actions">
+          <button class="btn-block" id="copyBtn">复制我的回答</button>
+          <button class="btn-outline" id="dlBtn">下载为文本文件</button>
+        </div>
       </div>
 
-      <p class="fineprint" style="margin-top:36px">
-        这份记录只保存在你自己的设备上，我们不设后台、不做公开。如果你改变了主意，随时可以关闭页面，不必发送。
-      </p>
+      <div class="done-actions" id="dlOnly" style="display:none">
+        <button class="btn-outline" id="dlBtn2">下载一份留底</button>
+      </div>
+
+      <p class="fineprint" style="margin-top:36px" id="doneFine"></p>
     </div>
   </section>
 
@@ -769,6 +770,7 @@ async function submit(){
   const id = makeId();
   const text = buildTranscript(id);
   const payload = {
+    _subject: `AI 小小创造者调研 · ${id}`,
     survey: CONFIG.surveyId,
     id,
     submittedAt: new Date().toISOString(),
@@ -780,14 +782,22 @@ async function submit(){
     c01: state.c01.trim(), c02: state.c02.trim(), c03: state.c03.trim()
   };
 
+  const btn = $("#nextBtn");
+  btn.disabled = true;
+  btn.textContent = "提交中…";
+
+  let delivered = false;
   if(CONFIG.endpoint){
     try{
-      await fetch(CONFIG.endpoint, {
+      const res = await fetch(CONFIG.endpoint, {
         method:"POST",
-        headers:{"Content-Type":"application/json"},
+        headers:{"Content-Type":"application/json","Accept":"application/json"},
         body: JSON.stringify(payload)
       });
-    }catch(e){ /* 静默失败，仍保留复制回传路径 */ }
+      delivered = res.ok;
+    }catch(e){
+      delivered = false;
+    }
   }
 
   const all = JSON.parse(localStorage.getItem("aics_submitted") || "[]");
@@ -798,7 +808,41 @@ async function submit(){
   $("#transcript").textContent = text;
   $("#transcript").dataset.raw = text;
   try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+
+  renderDone(delivered);
   goTo(3);
+}
+
+/* ── 完成页三种状态 ── */
+function renderDone(delivered){
+  const note = $("#doneNote"), fine = $("#doneFine"), seal = $("#seal");
+
+  if(!CONFIG.endpoint){
+    seal.textContent = "已提交";
+    seal.classList.remove("fail");
+    note.innerHTML = '你的回答已经整理成一份记录。<strong>请点击下面的按钮复制它，并发送给邀请你参与调研的研究员。</strong>也可以直接把这一页截图发过去。';
+    fine.textContent = "这份记录只保存在你自己的设备上。如果你改变了主意，随时可以关闭页面，不必发送。";
+    $("#copyBlock").style.display = "block";
+    $("#dlOnly").style.display = "none";
+    return;
+  }
+
+  if(delivered){
+    seal.textContent = "已提交";
+    seal.classList.remove("fail");
+    note.innerHTML = '你的回答已经发送到教研团队，我们会认真读。谢谢你的时间。';
+    fine.textContent = "如果需要留一份自己的记录，可以下载下面的文本文件。";
+    $("#copyBlock").style.display = "none";
+    $("#dlOnly").style.display = "flex";
+    return;
+  }
+
+  seal.textContent = "未发送";
+  seal.classList.add("fail");
+  note.innerHTML = '自动发送没有成功，可能是网络的问题。<strong>请点击下面的按钮复制回答，直接发给邀请你参与调研的人。</strong>';
+  fine.textContent = "这一页可以截图，也可以下载 txt 文件。关掉页面也不会丢失已经填好的内容。";
+  $("#copyBlock").style.display = "block";
+  $("#dlOnly").style.display = "none";
 }
 
 /* ── 事件绑定 ── */
@@ -893,7 +937,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // 下载
-  $("#dlBtn").addEventListener("click", () => {
+  const download = () => {
     const text = $("#transcript").dataset.raw || "";
     const blob = new Blob([text], {type:"text/plain;charset=utf-8"});
     const a = document.createElement("a");
@@ -901,7 +945,9 @@ document.addEventListener("DOMContentLoaded", () => {
     a.download = `AI小小创造者调研_${$("#famidOut").textContent}.txt`;
     a.click();
     setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
-  });
+  };
+  $("#dlBtn").addEventListener("click", download);
+  $("#dlBtn2").addEventListener("click", download);
 });
 
 let toastTimer;
