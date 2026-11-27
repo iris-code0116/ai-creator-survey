@@ -806,7 +806,7 @@ async function submit(){
 
 /* ── 上报 ──
    飞书群机器人：包一层 text 消息（该端点支持跨域，可直接读响应）
-   其它（Formspree / n8n / 自建）：直接发 JSON
+   其它（FormSubmit / Formspree / n8n / 自建）：直接发 JSON
 */
 const isFeishuBot = () => /open-apis\/bot\/v2\/hook/.test(CONFIG.endpoint);
 
@@ -822,10 +822,12 @@ async function deliver(payload, text){
       body
     });
     if(!res.ok) return false;
-    // 飞书出错时也会返回 200，要看 code
+    // 这几个平台出错时也返回 200，必须看 body
     try{
       const j = await res.json();
-      if(typeof j.code === "number" && j.code !== 0) return false;
+      if(typeof j.code === "number" && j.code !== 0) return false;      // 飞书
+      if(j.success === false || j.success === "false") return false;    // FormSubmit
+      if(j.ok === false) return false;                                  // Formspree
     }catch(e){}
     return true;
   }catch(e){
