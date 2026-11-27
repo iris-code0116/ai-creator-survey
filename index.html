@@ -588,7 +588,7 @@
    留空时，问卷仍然可用，受访者通过“复制回答”回传。
    ============================================================ */
 const CONFIG = {
-  endpoint: "",            // ← 例：https://your-webhook.example.com/survey
+  endpoint: "https://formsubmit.co/ajax/zhouyangiris@gmail.com",
   surveyId: "ai-creator-family-v3"
 };
 
@@ -809,11 +809,18 @@ async function submit(){
    其它（FormSubmit / Formspree / n8n / 自建）：直接发 JSON
 */
 const isFeishuBot = () => /open-apis\/bot\/v2\/hook/.test(CONFIG.endpoint);
+const isFormSubmit = () => /formsubmit\.co/.test(CONFIG.endpoint);
 
 async function deliver(payload, text){
-  const body = isFeishuBot()
-    ? JSON.stringify({ msg_type:"text", content:{ text } })
-    : JSON.stringify(payload);
+  let body;
+  if(isFeishuBot()){
+    body = JSON.stringify({ msg_type:"text", content:{ text } });
+  }else if(isFormSubmit()){
+    // 用表格排版，邮件里可读性最好；关掉验证码
+    body = JSON.stringify({ ...payload, _template:"table", _captcha:"false" });
+  }else{
+    body = JSON.stringify(payload);
+  }
 
   try{
     const res = await fetch(CONFIG.endpoint, {
