@@ -331,8 +331,8 @@ function renderDone(delivered){
 
   seal.textContent = "未发送";
   seal.classList.add("fail");
-  note.innerHTML = '自动发送没有成功，可能是网络的问题。<strong>请点击下面的按钮复制回答，直接发给邀请你参与调研的人。</strong>';
-  fine.textContent = "这一页可以截图，也可以下载 txt 文件。关掉页面也不会丢失已经填好的内容。";
+  note.innerHTML = '自动发送没有成功，可能是网络的问题。<strong>请在关闭页面前复制回答或下载文本文件，以免丢失。</strong>';
+  fine.textContent = "你可以把复制的回答或下载的文件发给邀请你参与调研的人。";
   $("#copyBlock").style.display = "block";
   $("#dlOnly").style.display = "none";
 }
